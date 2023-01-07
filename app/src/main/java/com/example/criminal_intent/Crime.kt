@@ -10,7 +10,8 @@ data class Crime(
     val id: UUID = UUID.randomUUID(), // По умолчанию присваиваем приступлению уникальный ID
     var title: String = "",
     var date: Date = Date(), // По умолчанию присваиваем приступлению текущую дату
-    var isSolved: Boolean = false
+    var isSolved: Boolean = false,
+    var requiresPolice: Boolean = false
 )
 
 

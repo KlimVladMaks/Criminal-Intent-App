@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -78,21 +79,25 @@ class CrimeListFragment: Fragment() {
         crimeRecyclerView.adapter = adapter
     }
 
-    // Создаём внутренний класс CrimeHolder, предназначенный для хранение представления View для
-    // одного преступления
+    // Создаём абстрактный класс холдера, чтобы наследовать от него различные виды других холдеров
+    private abstract class AbstractCrimeHolder(view: View): RecyclerView.ViewHolder(view) {
+
+        // Создаём экземпляр класса Crime
+        var crime = Crime()
+
+        // Инициализируем из подключённого itemView заголовок преступления
+        val titleTextView: TextView = itemView.findViewById(R.id.crime_title)
+
+        // Инициализируем из подключённого itemView дату преступления
+        val dateTextView: TextView = itemView.findViewById(R.id.crime_date)
+    }
+
+    // Создаём внутренний класс CrimeHolder (наследуем его от AbstractCrimeHolder), предназначенный
+    // для хранение представления View для одного преступления
     // (В дальнейшем CrimeHolder-ы используются для наполнения списка преступлений)
     // (Дополнительно реализуем в классе механизм нажатия на элемент списка с помощью View.OnClickListener)
     private inner class CrimeHolder(view: View)
-        : RecyclerView.ViewHolder(view), View.OnClickListener {
-
-        // Создаём переменную для хранения экземпляра класса преступления
-        private lateinit var crime: Crime
-
-        // Инициализируем из подключённого itemView заголовок преступления
-        private val titleTextView: TextView = itemView.findViewById(R.id.crime_title)
-
-        // Инициализируем из подключённого itemView дату преступления
-        private val dateTextView: TextView = itemView.findViewById(R.id.crime_date)
+        : AbstractCrimeHolder(view), View.OnClickListener {
 
         // При инициализации холдера подключаем к нему слушателя нажатий
         init {
@@ -118,21 +123,73 @@ class CrimeListFragment: Fragment() {
         }
     }
 
+    // Создаём ещё один класс холдер для хранения серьёзных преступлений
+    // (Также наследуем данный класс от AbstractCrimeHolder и View.OnClickListener)
+    private inner class SeriousCrimeHolder(view: View)
+        : AbstractCrimeHolder(view), View.OnClickListener {
+
+        // Инициализируем кнопку для вызова полиции
+        val callPoliceButton: Button = itemView.findViewById(R.id.call_police_button)
+
+        // При инициализации холдера подключаем к нему слушателя нажатий
+        init {
+            itemView.setOnClickListener(this)
+        }
+
+        // Создаём функцию для привязываение переданного преступления к данному холдеру
+        fun bind(crime: Crime) {
+
+            // Сохраняем переданное преступление в свойствах класса
+            this.crime = crime
+
+            // Обновляем заголовок и дату представления преступления согласно переданному экземпляру
+            titleTextView.text = this.crime.title
+            dateTextView.text = this.crime.date.toString()
+
+            // Добавляем слушателя, который при нажатии на кнопку выводит всплывающее сообщение,
+            // что полиция вызвана
+            callPoliceButton.setOnClickListener {
+                Toast.makeText(context, "The police are called!", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Функция, вызываемая при нажатии на элемент холдера
+        override fun onClick(v: View) {
+
+            // Выводим всплывающее сообщение с заголовком нажатого преступления
+            Toast.makeText(context, "${crime.title} pressed!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // Создаём внутренний класс Adapter, который отвечает за создание CrimeHolder-ов и подключение
     // их к списку преступлений
     // (Adapter связывает RecyclerView и набор данных с преступлениями)
     private inner class CrimeAdapter(var crimes: List<Crime>)
-        : RecyclerView.Adapter<CrimeHolder>() {
+        : RecyclerView.Adapter<AbstractCrimeHolder>() {
 
         // Создаём функция onCreateViewHolder(), которая отвечает за создание представления
         // на дисплее, оборачивает его в холдер и возвращает результат
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CrimeHolder {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AbstractCrimeHolder {
 
-            // Создаём объект представления View
-            val view = layoutInflater.inflate(R.layout.list_item_crime, parent, false)
+            // Проверяем тип переданного представления
+            when (viewType) {
 
-            // Возвращаем созданное представление, обёрнутое в CrimeHolder
-            return CrimeHolder(view)
+                // Если тип равен 0 (обычное преступление), то создаём объект представления View
+                // с макетом list_item_crime.xml и возвращаем, оборачивая в CrimeHolder
+                0 -> {
+                    val view = layoutInflater
+                        .inflate(R.layout.list_item_crime, parent, false)
+                    return CrimeHolder(view)
+                }
+
+                // Иначе (серьёзное преступление) создаём объект представления View
+                // с макетом list_item_serious_crime.xml и возвращаем, оборачивая в SeriousCrimeHolder
+                else -> {
+                    val view = layoutInflater
+                        .inflate(R.layout.list_item_serious_crime, parent, false)
+                    return SeriousCrimeHolder(view)
+                }
+            }
         }
 
         // Создаём функцию getItemCount(), позволяющую получить размер списка преступлений
@@ -140,14 +197,31 @@ class CrimeListFragment: Fragment() {
 
         // Создаём функцию onBindViewHolder(), которая отвечает за заполнение данного холдера holder
         // преступлением из данной позиции position
-        override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
+        override fun onBindViewHolder(holder: AbstractCrimeHolder, position: Int) {
 
             // Получаем экземпляр преступления с заданной позиции
             val crime = crimes[position]
 
-            // Добавляем в переданный холдер CrimeHolder необходимые данные
+            // Добавляем в переданный холдер необходимые данные
             // путём вызова соответсвующей функции холдера
-            holder.bind(crime)
+            when (holder) {
+                is CrimeHolder -> holder.bind(crime)
+                is SeriousCrimeHolder -> holder.bind(crime)
+            }
+        }
+
+        // Переопределяем функцию, которая задаёт тип для элемента с переданной позицией
+        override fun getItemViewType(position: Int): Int {
+
+            // Достаём из списка конкретное преступление
+            val crime = crimes[position]
+
+            // Если вызов полиции требуется, то помечаем преступление как тяжёлое
+            // Иначе помечаем преступление как обычное
+            return when (crime.requiresPolice) {
+                true -> 1
+                else -> 0
+            }
         }
     }
 
