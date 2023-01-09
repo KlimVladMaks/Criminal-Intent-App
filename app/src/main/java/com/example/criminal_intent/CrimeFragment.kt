@@ -28,6 +28,9 @@ class CrimeFragment: Fragment() {
     // Создаём переменную для хранения окошка с галочкой
     private lateinit var solvedCheckBox: CheckBox
 
+    // Создаём переменную для окошка с галочкой - "Requires Police"
+    private lateinit var requiresPoliceCheckBox: CheckBox
+
     // Переопределяем функцию создания фрагмента
     // (Данная функция должна быть открытой, чтобы вызываться произвольной Activity)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,8 +62,11 @@ class CrimeFragment: Fragment() {
         // Инициализируем кнопку с датой
         dateButton = view.findViewById(R.id.crime_date) as Button
 
-        // Инициализируем окошко с галочкой
+        // Инициализируем окошко с галочкой "Преступление решено"
         solvedCheckBox = view.findViewById(R.id.crime_solved) as CheckBox
+
+        // Инициализируем окошко с галочкой "Требуется полиция"
+        requiresPoliceCheckBox = view.findViewById(R.id.requires_police_checkbox) as CheckBox
 
         // Добавляем в кнопку текущую дату и выключаем кнопку (делаем нечувствительной к нажатиям)
         dateButton.apply {
@@ -119,6 +125,14 @@ class CrimeFragment: Fragment() {
         solvedCheckBox.apply {
             setOnCheckedChangeListener { _, isChecked ->
                 crime.isSolved = isChecked
+            }
+        }
+
+        // Добовляем к окошку с галочкой слушателя, проверяющего, была ли установлена галочка
+        // и записывающего информацию об этом (true или false) в экземпляр класса Crime
+        requiresPoliceCheckBox.apply {
+            setOnCheckedChangeListener { _, isChecked ->
+                crime.requiresPolice = isChecked
             }
         }
     }

@@ -45,5 +45,12 @@
         android:layout_height="wrap_content"
         android:text="@string/crime_solved_label"/>
 
+    <!-- Окошко для галочки, требуется полиция -->
+    <CheckBox
+        android:id="@+id/requires_police_checkbox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/requires_police_text"/>
+
 </LinearLayout>
 
