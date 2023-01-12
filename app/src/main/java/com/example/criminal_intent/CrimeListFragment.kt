@@ -6,12 +6,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.text.SimpleDateFormat
+import java.util.*
 
 // Создаём тэг для данного класса
 private const val TAG = "CrimeListFragmentTAG"
@@ -90,6 +93,9 @@ class CrimeListFragment: Fragment() {
 
         // Инициализируем из подключённого itemView дату преступления
         val dateTextView: TextView = itemView.findViewById(R.id.crime_date)
+
+        // Инициализируем изображение с наручниками для решённых преступлений
+        val solvedImageView: ImageView = itemView.findViewById(R.id.crime_solved)
     }
 
     // Создаём внутренний класс CrimeHolder (наследуем его от AbstractCrimeHolder), предназначенный
@@ -112,7 +118,17 @@ class CrimeListFragment: Fragment() {
 
             // Обновляем заголовок и дату представления преступления согласно переданному экземпляру
             titleTextView.text = this.crime.title
-            dateTextView.text = this.crime.date.toString()
+            dateTextView.text =
+                SimpleDateFormat("EEEE, MMM d, yyyy", Locale.getDefault())
+                    .format(this.crime.date)
+
+            // Если приступление решено, то делаем изображение с наручниками видимым
+            // Иначе делаем его невидимым
+            solvedImageView.visibility = if (crime.isSolved) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
         }
 
         // Функция, вызываемая при нажатии на элемент холдера
@@ -144,12 +160,22 @@ class CrimeListFragment: Fragment() {
 
             // Обновляем заголовок и дату представления преступления согласно переданному экземпляру
             titleTextView.text = this.crime.title
-            dateTextView.text = this.crime.date.toString()
+            dateTextView.text =
+                SimpleDateFormat("EEEE, MMM d, yyyy", Locale.getDefault())
+                    .format(this.crime.date)
 
             // Добавляем слушателя, который при нажатии на кнопку выводит всплывающее сообщение,
             // что полиция вызвана
             callPoliceButton.setOnClickListener {
                 Toast.makeText(context, "The police are called!", Toast.LENGTH_SHORT).show()
+            }
+
+            // Если приступление решено, то делаем изображение с наручниками видимым
+            // Иначе делаем его невидимым
+            solvedImageView.visibility = if (crime.isSolved) {
+                View.VISIBLE
+            } else {
+                View.GONE
             }
         }
 
