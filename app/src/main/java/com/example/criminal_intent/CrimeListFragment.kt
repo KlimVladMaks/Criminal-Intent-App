@@ -25,20 +25,12 @@ class CrimeListFragment: Fragment() {
     // Создаём переменную для хранения списка преступлений
     private lateinit var crimeRecyclerView: RecyclerView
 
-    // Создаём переменную для хранения адаптера списка
-    private var adapter: CrimeAdapter? = null
+    // Создаём переменную для хранения адаптера списка и по умолчанию добавляем в него пустой список
+    private var adapter: CrimeAdapter? = CrimeAdapter(emptyList())
 
     // Лениво инициализируем экземпляр CrimeListViewModel, привязывая его к данному фрагменту
     private val crimeListViewModel: CrimeListViewModel by lazy {
         ViewModelProvider(this)[CrimeListViewModel::class.java]
-    }
-
-    // Переопреедляем функцию создания фрагмента
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // Выводим в консоль количество преступлений в списке
-        Log.d(TAG, "Total crimes: ${crimeListViewModel.crimes.size}")
     }
 
     // Переопределяем функцию для заполнения представления фрагмента
@@ -62,18 +54,38 @@ class CrimeListFragment: Fragment() {
         // (Для подключения используем Context, с которым в данный момент связан этот фрагмент)
         crimeRecyclerView.layoutManager = LinearLayoutManager(context)
 
-        // Обновляем список преступлений
-        updateUI()
+        // Загружаем адаптер для RecyclerView
+        crimeRecyclerView.adapter = adapter
 
         // Возвращаем объект представления
         return view
     }
 
-    // Функция для обновляения интерфейса фрагмента (в частности списка преступлений)
-    private fun updateUI() {
+    // Переопределяем функцию, вызываемую сразу после onCreateView(), когда представление уже задано
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        // Достаём из ViewModel список преступлений
-        val crimes = crimeListViewModel.crimes
+        // Устанавливаем наблюдателя за состоянием LiveData
+        // Наблюдатель реагирует каждый раз, когда изменяются данные в LiveData
+        crimeListViewModel.crimesListLiveData.observe(
+
+            // viewLifecycleOwner следит за жизненным циклом фрагмента и
+            // не позволяет обновить данные, когда фрагмент находится в нерабочем состоянии
+            viewLifecycleOwner,
+
+            // Если список не пуст, выводим в Logcat сообщение о количестве элементов
+            // и обновляем список преступлений
+            androidx.lifecycle.Observer {
+                it?.let {
+                    Log.i(TAG, "Got crimes ${it.size}")
+                    updateUI(it)
+                }
+            }
+        )
+    }
+
+    // Функция для обновляения интерфейса фрагмента (в частности списка преступлений)
+    private fun updateUI(crimes: List<Crime>) {
 
         // Создаём адаптер, передавая ему список преступлений
         adapter = CrimeAdapter(crimes)

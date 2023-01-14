@@ -5,18 +5,11 @@ import androidx.lifecycle.ViewModel
 // Создаём класс для хранения списка преступлений, наследуя его от ViewModel
 class CrimeListViewModel: ViewModel() {
 
-    // Создаём список для хранения преступлений
-    val crimes = mutableListOf<Crime>()
+    // Запрашиваем экземпляр репозитория CrimeRepository
+    private val crimeRepository = CrimeRepository.get()
 
-    // Вызывается при инициализации экземпляра класса
-    init {
-        // Создаём несколько фиктивных преступлений, чтобы наполнить список
-        for (i in 0 until 100) {
-            val crime = Crime()
-            crime.title = "Crime #${i}"
-            crime.isSolved = (i % 2 == 0)
-            crime.requiresPolice = (i % 5 == 0)
-            crimes += crime
-        }
-    }
+    // Запрашиваем список всех преступлений
+    val crimesListLiveData = crimeRepository.getCrimes()
 }
+
+

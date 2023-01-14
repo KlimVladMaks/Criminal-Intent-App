@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'com.example.criminal_intent'
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.example.criminal_intent"
         minSdk 21
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -52,7 +52,7 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
 
     // Подключаем библиотеку Room для долгосрочного хранения данных
-    implementation 'androidx.room:room-runtime:2.1.0-alpha04'
-    kapt 'androidx.room:room-compiler:2.1.0-alpha04'
+    implementation 'androidx.room:room-runtime:2.5.0'
+    kapt 'androidx.room:room-compiler:2.5.0'
 }
 
