@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.room.TypeConverter
 import java.util.*
 
+// Создаём тэг для отладки
 private const val TAG = "CrimeTypeConvertersTAG"
 
 // Создаём класс, содержащий функции для конвертирования сложных значений в примитивные и обратно

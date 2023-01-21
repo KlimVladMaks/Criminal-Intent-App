@@ -3,6 +3,7 @@ package com.example.criminal_intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,8 +11,17 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
+import java.util.*
 
 // Данный файл является частью контроллера
+
+// Создаём тэг для вывода отладочных сообщений
+private const val TAG = "CrimeFragmentTAG"
+
+// Создаём тэг для обрещения к ID преступления в пакете Bundle
+private const val ARG_CRIME_ID = "crime_id"
 
 // Создаём класс фрагмента
 class CrimeFragment: Fragment() {
@@ -31,6 +41,11 @@ class CrimeFragment: Fragment() {
     // Создаём переменную для окошка с галочкой - "Requires Police"
     private lateinit var requiresPoliceCheckBox: CheckBox
 
+    // Лениво инициализируем экземпляр CrimeDetailViewModel, привязывая его к данному фрагменту
+    private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
+        ViewModelProvider(this)[CrimeDetailViewModel::class.java]
+    }
+
     // Переопределяем функцию создания фрагмента
     // (Данная функция должна быть открытой, чтобы вызываться произвольной Activity)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +53,12 @@ class CrimeFragment: Fragment() {
 
         // Создаём экземпляр класса Crime
         crime = Crime()
+
+        // Получаем ID выбранного преступления из пакета аргументов фрагмента
+        val crimeId: UUID = arguments?.getSerializable(ARG_CRIME_ID) as UUID
+
+        // Загружаем в crimeDetailViewModel информацию об ID выбранного преступления
+        crimeDetailViewModel.loadCrime(crimeId)
     }
 
     // Переопределяем функцию для заполнения представления фрагмента
@@ -76,6 +97,29 @@ class CrimeFragment: Fragment() {
 
         // Возвращаем созданный объект View
         return view
+    }
+
+    // Переопределяем функцию, вызываемую сразу после onCreateView(), когда представление уже задано
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Устанавливаем наблюдателя за состоянием LiveData
+        // Наблюдатель реагирует каждый раз, когда изменяются данные в LiveData
+        crimeDetailViewModel.crimeLiveData.observe(
+
+            // viewLifecycleOwner следит за жизненным циклом фрагмента и
+            // не позволяет обновить данные, когда фрагмент находится в нерабочем состоянии
+            viewLifecycleOwner,
+
+            // Загружаем информацию о выбранном преступлении в собственное представление crime
+            // данного фрагмента и обновляем его интерфейс
+            androidx.lifecycle.Observer {
+                it?.let {
+                    this.crime = it
+                    updateUI()
+                }
+            }
+        )
     }
 
     // Переопределяем функцию, вызываемую при запуске фрагмента
@@ -133,6 +177,41 @@ class CrimeFragment: Fragment() {
         requiresPoliceCheckBox.apply {
             setOnCheckedChangeListener { _, isChecked ->
                 crime.requiresPolice = isChecked
+            }
+        }
+    }
+
+    // Обновляем интерфейс страницы конкретного преступления в соответсвии с данными текущего преступления
+    private fun updateUI() {
+        titleField.setText(crime.title)
+        dateButton.text = crime.date.toString()
+
+        // Для окошек с галочкой отключаем анимацию при добавлении загруженных данных, чтобы избежать
+        // анимированного выставления галочки при запуске фрагмента и повороте устройства
+        solvedCheckBox.apply {
+            isChecked = crime.isSolved
+            jumpDrawablesToCurrentState()
+        }
+        requiresPoliceCheckBox.apply {
+            isChecked = crime.requiresPolice
+            jumpDrawablesToCurrentState()
+        }
+    }
+
+    // Добавляем поле свойств, доступных без создания экземпляра класса
+    companion object {
+
+        // Создаём функцию для получения экземпляра фрагмента с возможностью передать ему ID преступления
+        fun newInstance(crimeId: UUID): CrimeFragment {
+
+            // Создаём пакет Bundle, в который помещаем информацию о переданном ID преступления
+            val args = Bundle().apply {
+                putSerializable(ARG_CRIME_ID, crimeId)
+            }
+
+            // Возвращаем экземпляр CrimeFragment с добавленным к нему пакетом аргументов
+            return CrimeFragment().apply {
+                arguments = args
             }
         }
     }

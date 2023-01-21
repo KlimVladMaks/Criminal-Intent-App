@@ -1,5 +1,6 @@
 package com.example.criminal_intent
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -22,6 +23,16 @@ private const val TAG = "CrimeListFragmentTAG"
 // Создаём класс фрагмента для работы со списком преступлений
 class CrimeListFragment: Fragment() {
 
+    // Создаём интерфейс для обратного вызова (передачи сообщения в) хост-активити
+    interface Callbacks {
+
+        // Функция, возвращающая хост-активити информацию о выбранном (нажатом) преступлении
+        fun onCrimeSelected(crimeId: UUID)
+    }
+
+    // Инициализируем переменную, хранящую экземпляр интерфейса Callbacks обратного вызова хост-активити
+    private var callbacks: Callbacks? = null
+
     // Создаём переменную для хранения списка преступлений
     private lateinit var crimeRecyclerView: RecyclerView
 
@@ -31,6 +42,15 @@ class CrimeListFragment: Fragment() {
     // Лениво инициализируем экземпляр CrimeListViewModel, привязывая его к данному фрагменту
     private val crimeListViewModel: CrimeListViewModel by lazy {
         ViewModelProvider(this)[CrimeListViewModel::class.java]
+    }
+
+    // Переопреедляем функцию onAttach(), вызываемую, когда фрагмент прикрепляется к activity
+    // В качестве context передаётся экземпляр activity
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+
+        // Помещаем в callbacks экземпляр activity, к которой был прикреплён фрагмент
+        callbacks = context as Callbacks?
     }
 
     // Переопределяем функцию для заполнения представления фрагмента
@@ -82,6 +102,14 @@ class CrimeListFragment: Fragment() {
                 }
             }
         )
+    }
+
+    // Переопределяем функцию, вызываемую при откреплении фрагмента от activity
+    override fun onDetach() {
+        super.onDetach()
+
+        // Устанавливаем callbacks равным null, так как он больше не должен обращаться к хост-активити
+        callbacks = null
     }
 
     // Функция для обновляения интерфейса фрагмента (в частности списка преступлений)
@@ -146,8 +174,8 @@ class CrimeListFragment: Fragment() {
         // Функция, вызываемая при нажатии на элемент холдера
         override fun onClick(v: View) {
 
-            // Выводим всплывающее сообщение с заголовком нажатого преступления
-            Toast.makeText(context, "${crime.title} pressed!", Toast.LENGTH_SHORT).show()
+            // Возвращаем хост-активити информацию об ID нажатого преступления
+            callbacks?.onCrimeSelected(crime.id)
         }
     }
 
@@ -194,8 +222,8 @@ class CrimeListFragment: Fragment() {
         // Функция, вызываемая при нажатии на элемент холдера
         override fun onClick(v: View) {
 
-            // Выводим всплывающее сообщение с заголовком нажатого преступления
-            Toast.makeText(context, "${crime.title} pressed!", Toast.LENGTH_SHORT).show()
+            // Возвращаем хост-активити информацию об ID нажатого преступления
+            callbacks?.onCrimeSelected(crime.id)
         }
     }
 

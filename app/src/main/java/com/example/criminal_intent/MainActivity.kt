@@ -2,11 +2,17 @@ package com.example.criminal_intent
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import java.util.*
 
 // Данный файл является частью котроллера
 
+// Создаём тэг для отладки MainActivity
+private const val TAG = "MainActivityTAG"
+
 // Создаём главный Activity-класс, с которого начинается работа приложения
-class MainActivity : AppCompatActivity() {
+// Добавляем в MainActivity интерфейс CrimeListFragment.Callbacks для реализации функции обратного вызова
+class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks {
 
     // Переопределяем функцию для инициализации приложения
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,6 +35,24 @@ class MainActivity : AppCompatActivity() {
                 .add(R.id.fragment_container, fragment)
                 .commit()
         }
+    }
+
+    // Переопределяем функцию, вызываемую при нажатии на пресступление
+    // Функция принимает на вход ID преступления
+    override fun onCrimeSelected(crimeId: UUID) {
+
+        // Создаём экземпляр фрагмента CrimeFragment, передавая ему ID переданного преступления
+        val fragment = CrimeFragment.newInstance(crimeId)
+
+        // Устанавливаем экземпляр CrimeFragment в качестве нового фрагмента, подключая его к макету
+        // (Заменяем старый фрагмент на новый фрагмент)
+        // Функция addToBackStack() позволяет поместить старый фрагмент в обратный стек и вернуться
+        // к нему при нажатии кнопки "Назад" (в качестве аргуемнта функция принимает название состояния стека)
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 }
 
