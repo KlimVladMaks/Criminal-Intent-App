@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.room.Room
 import com.example.criminal_intent.database.CrimeDatabase
 import java.util.UUID
+import java.util.concurrent.Executors
 
 // Задаём имя базы данных
 private const val DATABASE_NAME = "crime-database"
@@ -26,6 +27,10 @@ class CrimeRepository private constructor(context: Context) {
     // Создаём объект доступа к данным
     private val crimeDao = database.crimeDao()
 
+    // Создаём экземпляр исполнителя - объекта, который ссылкается на какой-либо поток
+    // В данном случае исполнитель ссылается на новый фоновый поток, в котором можно безапасно работать с БД
+    private val executor = Executors.newSingleThreadExecutor()
+
     // Функция для получения всего списка преступлений
     // (Используем LiveData для запуска запроса в фоновом потоке)
     fun getCrimes(): LiveData<List<Crime>> = crimeDao.getCrimes()
@@ -33,6 +38,26 @@ class CrimeRepository private constructor(context: Context) {
     // Функция для получения одного преступления по его UUID
     // (Используем LiveData для запуска запроса в фоновом потоке)
     fun getCrime(id: UUID): LiveData<Crime?> = crimeDao.getCrime(id)
+
+    // Создаём функцию для обновления преступления в базе данных
+    fun updateCrime(crime: Crime) {
+
+        // Запускаем блок кода в том потоке, на который ссылается исполнитель
+        executor.execute {
+            // Обновляем переданное преступление в базе данных
+            crimeDao.updateCrime(crime)
+        }
+    }
+
+    // Функция для добавления нового пресупления в базу данных
+    fun addCrime(crime: Crime) {
+
+        // Запускаем блок кода в том потоке, на который ссылается исполнитель
+        executor.execute {
+            // Добавляем переданное преступление в базу данных
+            crimeDao.addCrime(crime)
+        }
+    }
 
     // Создаём объект, содержимое которого доступно и за пределами класса
     companion object {

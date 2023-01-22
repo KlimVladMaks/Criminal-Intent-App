@@ -31,4 +31,11 @@ class CrimeDetailViewModel(): ViewModel() {
     fun loadCrime(crimeId: UUID) {
         crimeIdLiveData.value = crimeId
     }
+
+    // Функция для сохранения изменений на карточке преступления путём обновления базы данных
+    fun saveCrime(crime: Crime) {
+        crimeRepository.updateCrime(crime)
+    }
 }
+
+

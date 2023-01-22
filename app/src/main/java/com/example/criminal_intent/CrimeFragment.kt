@@ -3,7 +3,6 @@ package com.example.criminal_intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,7 +11,6 @@ import android.widget.CheckBox
 import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
 import java.util.*
 
 // Данный файл является частью контроллера
@@ -179,6 +177,14 @@ class CrimeFragment: Fragment() {
                 crime.requiresPolice = isChecked
             }
         }
+    }
+
+    // Переопределяем функцию, вызываемую перед остановкой фрагмента
+    override fun onStop() {
+        super.onStop()
+
+        // Сохраняем изменения, внесённые в карточку перступления
+        crimeDetailViewModel.saveCrime(crime)
     }
 
     // Обновляем интерфейс страницы конкретного преступления в соответсвии с данными текущего преступления
