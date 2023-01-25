@@ -158,6 +158,8 @@ class CrimeListFragment: Fragment() {
 
             // Обновляем заголовок и дату представления преступления согласно переданному экземпляру
             titleTextView.text = this.crime.title
+
+            // Дополнительно форматируем дату в удобночитаемый вид
             dateTextView.text =
                 SimpleDateFormat("EEEE, MMM d, yyyy", Locale.getDefault())
                     .format(this.crime.date)
@@ -200,6 +202,8 @@ class CrimeListFragment: Fragment() {
 
             // Обновляем заголовок и дату представления преступления согласно переданному экземпляру
             titleTextView.text = this.crime.title
+
+            // Дополнительно форматируем дату в удобночитаемый вид
             dateTextView.text =
                 SimpleDateFormat("EEEE, MMM d, yyyy", Locale.getDefault())
                     .format(this.crime.date)

@@ -11,6 +11,7 @@ import android.widget.CheckBox
 import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import java.text.SimpleDateFormat
 import java.util.*
 
 // Данный файл является частью контроллера
@@ -21,8 +22,15 @@ private const val TAG = "CrimeFragmentTAG"
 // Создаём тэг для обрещения к ID преступления в пакете Bundle
 private const val ARG_CRIME_ID = "crime_id"
 
+// Создаём метку для идентификации диалогового фрагмента с календарём
+private const val DIALOG_DATE = "DialogDate"
+
+// Создаём код запроса для обращения к DatePickerFragment
+private const val REQUEST_DATE = 0
+
 // Создаём класс фрагмента
-class CrimeFragment: Fragment() {
+// (Наследуем его от DatePickerFragment.Callbacks, чтобы можно было получить выбранную на календаре дату)
+class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
 
     // Создаём переменную для хранения экземпляра класса Crime
     private lateinit var crime: Crime
@@ -86,12 +94,6 @@ class CrimeFragment: Fragment() {
 
         // Инициализируем окошко с галочкой "Требуется полиция"
         requiresPoliceCheckBox = view.findViewById(R.id.requires_police_checkbox) as CheckBox
-
-        // Добавляем в кнопку текущую дату и выключаем кнопку (делаем нечувствительной к нажатиям)
-        dateButton.apply {
-            text = crime.date.toString()
-            isEnabled = false
-        }
 
         // Возвращаем созданный объект View
         return view
@@ -177,6 +179,26 @@ class CrimeFragment: Fragment() {
                 crime.requiresPolice = isChecked
             }
         }
+
+        // Добавляем слушателя на кнопку выбора даты
+        dateButton.setOnClickListener {
+
+            // Создаём диалоговое окно с календарём, добавляя к нему дополнительные свойства
+            // (В качестве аргументов передаём дату выбранного преступления)
+            DatePickerFragment.newInstance(crime.date).apply {
+
+                // Назначаем CrimeFragment целевым фрагментом для DatePickerFragment
+                // (Теперь именно в CrimeFragment будут передаваться данные из DatePickerFragment)
+                setTargetFragment(this@CrimeFragment, REQUEST_DATE)
+
+                // Выводим созданное диалоговое окно поверх фрагмента
+                // (this@CrimeFragment используется для вызова функции requireFragmentManager()
+                // именно из CrimeFragment, this нужно для работы в области видимости блока apply)
+                // (DIALOG_DATE отвечает за идентификацию выведенного диалогового окна)
+                // Общий вид данной функции - show(FragmentManager, String)
+                show(this@CrimeFragment.requireFragmentManager(), DIALOG_DATE)
+            }
+        }
     }
 
     // Переопределяем функцию, вызываемую перед остановкой фрагмента
@@ -187,10 +209,25 @@ class CrimeFragment: Fragment() {
         crimeDetailViewModel.saveCrime(crime)
     }
 
+    // Переопределяем функцию для получения выбранной на календаре даты
+    override fun onDateSelected(date: Date) {
+
+        // Загружаем выбранную дату в текущий экземпляр преступления
+        crime.date = date
+
+        // Обновляем интерфейс в соотвествии с новыми данными
+        updateUI()
+    }
+
     // Обновляем интерфейс страницы конкретного преступления в соответсвии с данными текущего преступления
     private fun updateUI() {
+
+        // Устанавливаем заголовок преступления
         titleField.setText(crime.title)
-        dateButton.text = crime.date.toString()
+
+        // Дополнительно форматируем дату в удобночитаемый вид
+        dateButton.text = SimpleDateFormat("EEEE, MMM d, yyyy", Locale.getDefault())
+            .format(this.crime.date)
 
         // Для окошек с галочкой отключаем анимацию при добавлении загруженных данных, чтобы избежать
         // анимированного выставления галочки при запуске фрагмента и повороте устройства
