@@ -17,12 +17,11 @@ class CrimeRepository private constructor(context: Context) {
 
     // Создаём саму базу данных, передавая ей контекст приложения (для даступа к файловой системе),
     // класс CrimeDatabase и выбранное имя для базы данных
-    // TODO: createFromAsset("crime.db") используется временно
     private val database: CrimeDatabase = Room.databaseBuilder(
         context.applicationContext,
         CrimeDatabase::class.java,
         DATABASE_NAME
-    ).createFromAsset("crime.db").build()
+    ).build()
 
     // Создаём объект доступа к данным
     private val crimeDao = database.crimeDao()

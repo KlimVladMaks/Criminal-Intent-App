@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Макет верхнего меню списка преступлений -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Элемент меню для добавления нового преступления -->
+    <!-- app:showAsAction="ifRoom|withText" позволяет при наличии места отображать и значок, и такст команды -->
+    <!-- (Если места мало, то отображается только значок) -->
+    <!-- (Если места совсем нет, то элемент отображается в дополнительном меню) -->
+    <item
+        android:id="@+id/new_crime"
+        android:icon="@drawable/ic_menu_add"
+        android:title="@string/new_crime"
+        app:showAsAction="ifRoom|withText"/>
+
+</menu>

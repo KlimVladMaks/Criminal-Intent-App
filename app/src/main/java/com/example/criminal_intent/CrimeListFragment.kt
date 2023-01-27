@@ -3,9 +3,7 @@ package com.example.criminal_intent
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -51,6 +49,15 @@ class CrimeListFragment: Fragment() {
 
         // Помещаем в callbacks экземпляр activity, к которой был прикреплён фрагмент
         callbacks = context as Callbacks?
+    }
+
+    // Переопределяем функцию, вызываемую при создании фрагмента
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Указываем, что фрагмент должен получить обратные вызовы верхнего меню
+        // (По-сути, подключаем верхнее меню, указывая, что фрагмент будет работать с ним)
+        setHasOptionsMenu(true)
     }
 
     // Переопределяем функцию для заполнения представления фрагмента
@@ -110,6 +117,42 @@ class CrimeListFragment: Fragment() {
 
         // Устанавливаем callbacks равным null, так как он больше не должен обращаться к хост-активити
         callbacks = null
+    }
+
+    // Переопределяем функцию, вызываемую при создании верхнего меню фрагмента
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        // Заполняем верхнее меню XML-макетом fragment_crime_list
+        inflater.inflate(R.menu.fragment_crime_list, menu)
+    }
+
+    // Переопределяем функцию, вызываемую при выборе (нажатии) команды в верхнем меню
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+
+        // Исследуем ID выбранной команды
+        return when (item.itemId) {
+
+            // Если ID соответсвует команде создания нового преступления
+            R.id.new_crime -> {
+
+                // Создаём новый экземпляр преступления
+                val crime = Crime()
+
+                // Добавляем созданный экземпляр преступления в базу данных
+                crimeListViewModel.addCrime(crime)
+
+                // Отдаём хост-активити через интерфейс обратного вызова команду вывести карточку
+                // вышесозданного нового преступления на экран
+                callbacks?.onCrimeSelected(crime.id)
+
+                // Возвращаем true, чтобы показать, что дальнейшая обработка не требуется
+                true
+            }
+
+            // Иначе возвращаем базовый вариант onOptionsItemSelected(), который не создаёт нового перступления
+            else -> return super.onOptionsItemSelected(item)
+        }
     }
 
     // Функция для обновляения интерфейса фрагмента (в частности списка преступлений)

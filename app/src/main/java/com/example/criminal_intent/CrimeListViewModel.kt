@@ -10,6 +10,13 @@ class CrimeListViewModel: ViewModel() {
 
     // Запрашиваем список всех преступлений
     val crimesListLiveData = crimeRepository.getCrimes()
+
+    // Функция для добавления преступления в базу данных
+    fun addCrime(crime: Crime) {
+
+        // Добавляем переданное преступление в базу данных
+        crimeRepository.addCrime(crime)
+    }
 }
 
 
