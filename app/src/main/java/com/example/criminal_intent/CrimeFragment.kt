@@ -1,8 +1,16 @@
 package com.example.criminal_intent
 
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
+import android.net.Uri
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.text.Editable
 import android.text.TextWatcher
+import android.text.format.DateFormat
+import android.text.format.DateFormat.format
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +36,12 @@ private const val DIALOG_DATE = "DialogDate"
 // Создаём код запроса для обращения к DatePickerFragment
 private const val REQUEST_DATE = 0
 
+// Создаём код запроса контакта подозреваемого
+private const val REQUEST_CONTACT = 1
+
+// Создаём шаблон формата, в котором следует отображать дату
+private const val DATE_FORMAT = "EEE, MMM, dd"
+
 // Создаём класс фрагмента
 // (Наследуем его от DatePickerFragment.Callbacks, чтобы можно было получить выбранную на календаре дату)
 class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
@@ -46,6 +60,12 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
 
     // Создаём переменную для окошка с галочкой - "Requires Police"
     private lateinit var requiresPoliceCheckBox: CheckBox
+
+    // Создаём переменную для кнопки отправки отчёта о преступлении
+    private lateinit var reportButton: Button
+
+    // Создаём переменную для хранения кнопки выбора контакта подозреваемого
+    private lateinit var suspectButton: Button
 
     // Лениво инициализируем экземпляр CrimeDetailViewModel, привязывая его к данному фрагменту
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
@@ -94,6 +114,12 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
 
         // Инициализируем окошко с галочкой "Требуется полиция"
         requiresPoliceCheckBox = view.findViewById(R.id.requires_police_checkbox) as CheckBox
+
+        // Инициализируем кнопку отправки отчёта о преступлении
+        reportButton = view.findViewById(R.id.crime_report) as Button
+
+        // Инициализируем кнопку выбора контакта подозреваемого
+        suspectButton = view.findViewById(R.id.crime_suspect) as Button
 
         // Возвращаем созданный объект View
         return view
@@ -199,6 +225,67 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
                 show(this@CrimeFragment.requireFragmentManager(), DIALOG_DATE)
             }
         }
+
+        // Добавляем слушаетля к кнопке отправки отчёта о преступлении
+        reportButton.setOnClickListener {
+
+            // Создаём внешний интент для отправки отчёта о преступлении
+            // С помощью созданного интента делаем вызов требуемой Activity
+            Intent(Intent.ACTION_SEND).apply {
+
+                // Тип интента - простой текст
+                type = "text/plain"
+
+                // Загружаем строку с отчётом о преступлении
+                putExtra(Intent.EXTRA_TEXT, getCrimeReport())
+
+                // Добовляем строку с темой интента
+                putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crime_report_subject))
+
+            }.also {
+
+                // Помещаем созданный интент в новый интент, который создаёт списка выбора доступных приложений
+                val chooserIntent = Intent.createChooser(it, getString(R.string.send_report))
+
+                // Делаем вызов требуемой Activity
+                startActivity(chooserIntent)
+            }
+        }
+
+        // Добавляем к кнопке выбора контакта подозреваемого несколько компонентов
+        suspectButton.apply {
+
+            // Создаём интент, направленный на выбор контакта
+            // (Определяем данный интент вне слушателя, так как данный интент ещё понадобиться)
+            val pickContactIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+
+            // Создаём слушатель нажатия на кнопку
+            setOnClickListener {
+
+                // Запускаем требуемую активити по интенту с ожиданием получения результата
+                // (Передаём ей созданный выше интент и код запроса)
+                startActivityForResult(pickContactIntent, REQUEST_CONTACT)
+            }
+
+            // Фрагмент кода для проверки наличия списка контактов на устройстве
+            // (При отсутсвии списка, блокирует кнопку выбора контакта подозреваемого)
+            // На данный момент, фрагмент кода не работает, блокируя соотвествующую кнопку даже при
+            // наличии списка контактов
+            /*
+            // Записываем в переменную packageManager информацию о компанентах Android устройства
+            val packageManager: PackageManager = requireActivity().packageManager
+
+            // Ищем активити, которые соответсвуют pickContactIntent
+            val resolvedActivity: ResolveInfo? = packageManager
+                .resolveActivity(pickContactIntent, PackageManager.MATCH_DEFAULT_ONLY)
+
+            // Если на устройстве нет подходящих активити, то делаем кнопку добавления контакта
+            // подозреваемого недоступной
+            if (resolvedActivity == null) {
+                isEnabled = false
+            }
+            */
+        }
     }
 
     // Переопределяем функцию, вызываемую перед остановкой фрагмента
@@ -239,6 +326,91 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
             isChecked = crime.requiresPolice
             jumpDrawablesToCurrentState()
         }
+
+        // Если имя подозреваемого добавлено, то помещаем его в качестве текста на соответствующей кнопке
+        if (crime.suspect.isNotEmpty()) {
+            suspectButton.text = crime.suspect
+        }
+    }
+
+    // Переопределяем функцию, вызываемую при получении ответа от другой вызванной активити
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        // Перебираем различные варианты ответов и реагируем на них
+        when {
+
+            // Если код результата сигнализирует об ошибке, то прекращаем выполенение функции
+            resultCode != Activity.RESULT_OK -> return
+
+            // Если код запроса соответствует коду запроса контакта и возвращённые данные не являются пустыми
+            requestCode == REQUEST_CONTACT && data != null -> {
+
+                // Считываем полученные данный в формате URI
+                val contactUri: Uri? = data.data
+
+                // Указываем, какие поля нам нужно извлечь из полученных данных
+                // (В данном случае указываем, что нам нужно извлечь имя контакта)
+                val queryFields = arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
+
+                // Если считанные данные равны null, то прекращаем выполнение функции
+                if (contactUri == null) return
+
+                // Создаём объект (курсор) для работы с полученными данными, из которых выделяем
+                // поля, записанные в переменную queryFields
+                val cursor = requireActivity().contentResolver
+                        .query(contactUri, queryFields, null, null, null)
+
+                // С помощью курсора извлекаем имя полученного контакта
+                cursor?.use {
+
+                    // Если курсор не содержит никаких элементов, то прекращаем выполнение функции
+                    if (it.count == 0) {
+                        return
+                    }
+
+                    // Перемещаем курсор в первый столбец
+                    it.moveToFirst()
+
+                    // Извлекаем имя подозреваемого с соответствующей позиции
+                    val suspect = it.getString(0)
+
+                    // Добавляем имя подозреваемого в экземпляр класса Crime данного фрагмента
+                    crime.suspect = suspect
+
+                    // Сохраняем обновлённое преступление
+                    crimeDetailViewModel.saveCrime(crime)
+
+                    // Устанавливаем имя подозреваемого в качестве текста для соответсвующей кнопки
+                    suspectButton.text = suspect
+                }
+            }
+        }
+    }
+
+    // Создаём функцию для получения отчёта о преступлении в строковом формате
+    private fun getCrimeReport(): String {
+
+        // Получаем строку, было ли решено преступление
+        val solvedString = if (crime.isSolved) {
+            getString(R.string.crime_report_solved)
+        } else {
+            getString(R.string.crime_report_unsolved)
+        }
+
+        // Создаём строку с датой совершения преступления
+        val dateString = DateFormat.format(DATE_FORMAT, crime.date).toString()
+
+        // Получаем строку с именем подозреваемого
+        // (isBlank() проверяет, является ли строка пустой)
+        var suspect = if (crime.suspect.isBlank()) {
+            getString(R.string.crime_report_no_suspect)
+        } else {
+            getString(R.string.crime_report_suspect, crime.suspect)
+        }
+
+        // Формируем и возвращаем строку с итоговым отчётом
+        return getString(R.string.crime_report, crime.title, dateString, solvedString, suspect)
     }
 
     // Добавляем поле свойств, доступных без создания экземпляра класса

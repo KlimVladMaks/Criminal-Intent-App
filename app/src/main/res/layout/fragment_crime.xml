@@ -52,5 +52,19 @@
         android:layout_height="wrap_content"
         android:text="@string/requires_police_text"/>
 
+    <!-- Кнопка выбора подозреваемого -->
+    <Button
+        android:id="@+id/crime_suspect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/crime_suspect_text"/>
+
+    <!-- Кнопка отправки отчёта о преступлении -->
+    <Button
+        android:id="@+id/crime_report"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/crime_report_text"/>
+
 </LinearLayout>
 

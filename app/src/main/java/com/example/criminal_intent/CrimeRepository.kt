@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.room.Room
 import com.example.criminal_intent.database.CrimeDatabase
+import com.example.criminal_intent.database.migration_1_2
 import java.util.UUID
 import java.util.concurrent.Executors
 
@@ -21,7 +22,8 @@ class CrimeRepository private constructor(context: Context) {
         context.applicationContext,
         CrimeDatabase::class.java,
         DATABASE_NAME
-    ).build()
+    ).addMigrations(migration_1_2) // Реализуем миграцию от 1-й ко 2-й версии базы данных
+     .build()
 
     // Создаём объект доступа к данным
     private val crimeDao = database.crimeDao()
