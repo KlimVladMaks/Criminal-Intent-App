@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!-- Манифест Android-приложения -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Общие параметры приложения -->
     <application
         android:name=".CriminalIntentApplication"
         android:allowBackup="true"
@@ -13,19 +16,42 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CriminalIntent"
         tools:targetApi="31">
+
+        <!-- Общие переметры activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
+
+            <!-- Подключение интентов -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Настройка мета-данных -->
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
+
         </activity>
+
+        <!-- Подключаем FileProvider для работы с файловой системой устройства -->
+        <provider
+            android:authorities="com.example.criminal_intent.fileprovider"
+            android:name="androidx.core.content.FileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+
+            <!-- Показываем FileProvider какие файлы предоставляются -->
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/files"/>
+
+        </provider>
+
     </application>
 
 </manifest>
+
+
+

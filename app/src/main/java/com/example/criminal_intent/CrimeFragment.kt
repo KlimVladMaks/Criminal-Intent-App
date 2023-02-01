@@ -7,18 +7,23 @@ import android.content.pm.ResolveInfo
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.format.DateFormat
-import android.text.format.DateFormat.format
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.ImageView
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,6 +44,9 @@ private const val REQUEST_DATE = 0
 // Создаём код запроса контакта подозреваемого
 private const val REQUEST_CONTACT = 1
 
+// Создаём код запроса фото преступления
+private const val REQUEST_PHOTO = 2
+
 // Создаём шаблон формата, в котором следует отображать дату
 private const val DATE_FORMAT = "EEE, MMM, dd"
 
@@ -48,6 +56,12 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
 
     // Создаём переменную для хранения экземпляра класса Crime
     private lateinit var crime: Crime
+
+    // Создаём переменную для хранения ссылки на фото перступления
+    private lateinit var photoFile: File
+
+    // Создаём переменную для хранения Uri-ссылки на фото преступления
+    private lateinit var photoUri: Uri
 
     // Создаём переменную для хранения поля для ввода текста
     private lateinit var titleField: EditText
@@ -66,6 +80,12 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
 
     // Создаём переменную для хранения кнопки выбора контакта подозреваемого
     private lateinit var suspectButton: Button
+
+    // Создаём переменную для хранения фото преступления
+    private lateinit var photoView: ImageView
+
+    // Создаём переменную для хранения кнопки подготовки фото
+    private lateinit var photoButton: ImageButton
 
     // Лениво инициализируем экземпляр CrimeDetailViewModel, привязывая его к данному фрагменту
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
@@ -121,6 +141,12 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
         // Инициализируем кнопку выбора контакта подозреваемого
         suspectButton = view.findViewById(R.id.crime_suspect) as Button
 
+        // Инициализируем блок с фото преступления
+        photoView = view.findViewById(R.id.crime_photo) as ImageView
+
+        // Инициализируем кнопку для установки фото преступления
+        photoButton = view.findViewById(R.id.crime_camera) as ImageButton
+
         // Возвращаем созданный объект View
         return view
     }
@@ -137,11 +163,27 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
             // не позволяет обновить данные, когда фрагмент находится в нерабочем состоянии
             viewLifecycleOwner,
 
-            // Загружаем информацию о выбранном преступлении в собственное представление crime
-            // данного фрагмента и обновляем его интерфейс
+            // Обрабатываем выбранное преступление, извлекая из него необходимую информацию
             androidx.lifecycle.Observer {
                 it?.let {
+
+                    // Загружаем информацию о выбранном преступлении в собственное представление crime
+                    // данного фрагмента
                     this.crime = it
+
+                    // Получаем ссылку на файл с фото выбранного преступления
+                    photoFile = crimeDetailViewModel.getPhotoFile(it)
+
+                    // Используем созданный выше файловый путь для создания URI-ссылки, указывающей
+                    // на фото преступления.
+                    // FileProvider.getUriForFile() передаём экземпляр activity, ссылку на файловый провайдер
+                    // и файловый путь к фото
+                    photoUri = FileProvider.getUriForFile(
+                        requireActivity(),
+                        "com.example.criminal_intent.fileprovider",
+                        photoFile)
+
+                    // Обновляем интерфейс фрагмента
                     updateUI()
                 }
             }
@@ -256,7 +298,7 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
         suspectButton.apply {
 
             // Создаём интент, направленный на выбор контакта
-            // (Определяем данный интент вне слушателя, так как данный интент ещё понадобиться)
+            // (Определяем данный интент вне слушателя, так как данный интент ещё понадобится)
             val pickContactIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
 
             // Создаём слушатель нажатия на кнопку
@@ -276,8 +318,8 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
             val packageManager: PackageManager = requireActivity().packageManager
 
             // Ищем активити, которые соответсвуют pickContactIntent
-            val resolvedActivity: ResolveInfo? = packageManager
-                .resolveActivity(pickContactIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            val resolvedActivity: ResolveInfo? =
+                packageManager.resolveActivity(pickContactIntent, PackageManager.MATCH_DEFAULT_ONLY)
 
             // Если на устройстве нет подходящих активити, то делаем кнопку добавления контакта
             // подозреваемого недоступной
@@ -285,6 +327,50 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
                 isEnabled = false
             }
             */
+        }
+
+        // Добавляем к кнопке установки фото преступления несколько компонентов
+        photoButton.apply {
+
+            // Записываем в переменную packageManager информацию о компанентах Android устройства
+            val packageManager: PackageManager = requireActivity().packageManager
+
+            // Создаём интент, вызывающий приложения, способные сделать фотографию
+            val captureImage = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+
+            // Ищем активити, которые соответсвуют интенту captureImage
+            val resolvedActivity: ResolveInfo? =
+                packageManager.resolveActivity(captureImage, PackageManager.MATCH_DEFAULT_ONLY)
+
+            // Если подходящих активити нет, то блокируем кнопку фото
+            if (resolvedActivity == null) {
+                isEnabled = false
+            }
+
+            // Устанавливаем слушателя нажатия на кнопку
+            setOnClickListener {
+
+                // Добавляем в интент URI-ссылку по которой нужно разместить фотографию
+                captureImage.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+
+                // Получаем список всех активити, которые могут выполнить созданный выше интент
+                val cameraActivities: List<ResolveInfo> =
+                    packageManager.queryIntentActivities(captureImage, PackageManager.MATCH_DEFAULT_ONLY)
+
+                // Перебераем все найденные выше подходящие активити
+                for (cameraActivity in cameraActivities) {
+
+                    // Каждой подходящей активити даём разрещение на запись фото по URI-ссылке
+                    requireActivity().grantUriPermission(
+                        cameraActivity.activityInfo.packageName,
+                        photoUri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                }
+
+                // Запускаем функцию вызова активити по созданному выше интенту, передавая ей
+                // код, по которому она должна вернуть результат
+                startActivityForResult(captureImage, REQUEST_PHOTO)
+            }
         }
     }
 

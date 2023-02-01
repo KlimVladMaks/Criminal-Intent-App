@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
+import java.io.File
 import java.util.UUID
 
 // Создаём класс CrimeDetailViewModel для запроса инофрмации о преступлении и сохранении её при
@@ -35,6 +36,11 @@ class CrimeDetailViewModel(): ViewModel() {
     // Функция для сохранения изменений на карточке преступления путём обновления базы данных
     fun saveCrime(crime: Crime) {
         crimeRepository.updateCrime(crime)
+    }
+
+    // Функция для получения ссылки на фото переданного преступления в файловой системе
+    fun getPhotoFile(crime: Crime): File {
+        return crimeRepository.getPhotoFile(crime)
     }
 }
 

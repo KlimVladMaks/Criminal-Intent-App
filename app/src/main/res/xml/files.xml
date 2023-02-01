@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Назначаем crime_photos корневым путём приватного хранилища -->
+<paths>
+    <files-path
+        name="crime_photos"
+        path="."/>
+</paths>
+

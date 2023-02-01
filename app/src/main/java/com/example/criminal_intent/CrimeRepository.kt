@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.room.Room
 import com.example.criminal_intent.database.CrimeDatabase
 import com.example.criminal_intent.database.migration_1_2
+import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
 
@@ -31,6 +32,9 @@ class CrimeRepository private constructor(context: Context) {
     // Создаём экземпляр исполнителя - объекта, который ссылкается на какой-либо поток
     // В данном случае исполнитель ссылается на новый фоновый поток, в котором можно безапасно работать с БД
     private val executor = Executors.newSingleThreadExecutor()
+
+    // Создаём экземпляр файловой директории приложения
+    private val filesDir = context.applicationContext.filesDir
 
     // Функция для получения всего списка преступлений
     // (Используем LiveData для запуска запроса в фоновом потоке)
@@ -59,6 +63,9 @@ class CrimeRepository private constructor(context: Context) {
             crimeDao.addCrime(crime)
         }
     }
+
+    // Функция, возвращающая объект File, указывающий на файл с фотографией переданного преступления
+    fun getPhotoFile(crime: Crime): File = File(filesDir, crime.photoFileName)
 
     // Создаём объект, содержимое которого доступно и за пределами класса
     companion object {

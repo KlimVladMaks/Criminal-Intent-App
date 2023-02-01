@@ -20,6 +20,11 @@ data class Crime(
     var isSolved: Boolean = false,
     var requiresPolice: Boolean = false,
     var suspect: String = ""
-)
+) {
+
+    // Создаём переменную, при запросе значения которой возвращается уникальное имя для фото
+    val photoFileName
+        get() = "IMG_$id.jpg"
+}
 
 
