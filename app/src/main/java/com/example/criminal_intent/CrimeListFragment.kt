@@ -10,6 +10,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
@@ -277,8 +278,12 @@ class CrimeListFragment: Fragment() {
     // Создаём внутренний класс Adapter, который отвечает за создание CrimeHolder-ов и подключение
     // их к списку преступлений
     // (Adapter связывает RecyclerView и набор данных с преступлениями)
+    // (Используем ListAdapter, чтобы иметь возможность обновить лишь одно преступление, а не весь
+    // список сразу как в случае Adapter)
+    // (Передаём ListAdapter объект DiffCallback, чтобы ListAdapter мог определить изменённые
+    // элементы списка)
     private inner class CrimeAdapter(var crimes: List<Crime>)
-        : RecyclerView.Adapter<AbstractCrimeHolder>() {
+        : androidx.recyclerview.widget.ListAdapter<Crime, AbstractCrimeHolder>(DiffCallback) {
 
         // Создаём функция onCreateViewHolder(), которая отвечает за создание представления
         // на дисплее, оборачивает его в холдер и возвращает результат
@@ -338,6 +343,27 @@ class CrimeListFragment: Fragment() {
         }
     }
 
+    // Создаём объект DiffCallback, который должен определять, какие именно элементы списка были изменены
+    // (DiffCallback используется ListAdapter для точечного обновления лишь изменённых элементов списка,
+    // а не всего списка, как в случае в Adapter)
+    object DiffCallback: DiffUtil.ItemCallback<Crime>() {
+
+        // Переопределяем функцию, вызываемую для сравнения двух элементов списка
+        override fun areItemsTheSame(oldItem: Crime, newItem: Crime): Boolean {
+
+            // Сравниваем ID переданных преступлений и возвращаем результат сравнения
+            return oldItem.id == newItem.id
+        }
+
+        // Переопределяем функцию, вызываемую для сравнения содержания двух элементов списка
+        override fun areContentsTheSame(oldItem: Crime, newItem: Crime): Boolean {
+
+            // Сравниваем переданные преступления между собой и возвращаем результат сравнения
+            return oldItem == newItem
+        }
+
+    }
+
     // Объекты, доступные без создания экземпляра класса
     companion object {
 
@@ -347,3 +373,6 @@ class CrimeListFragment: Fragment() {
         }
     }
 }
+
+
+
