@@ -4,6 +4,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Указываем, что приложению для работы требуется доступ к камере -->
+    <!-- android:required="false" обозначает, что приложение может работать и без доступа к камере -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false"/>
+
     <!-- Общие параметры приложения -->
     <application
         android:name=".CriminalIntentApplication"

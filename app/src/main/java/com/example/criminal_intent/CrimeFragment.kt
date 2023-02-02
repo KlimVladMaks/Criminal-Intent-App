@@ -382,6 +382,14 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
         crimeDetailViewModel.saveCrime(crime)
     }
 
+    // Переопределяем функцию, которая вызывается, когда фрагмент отвязывается от активити
+    override fun onDetach() {
+        super.onDetach()
+
+        // Отзываем разрешение у других приложений на доступ к файлу текущего фото преступления
+        requireActivity().revokeUriPermission(photoUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+    }
+
     // Переопределяем функцию для получения выбранной на календаре даты
     override fun onDateSelected(date: Date) {
 
@@ -417,6 +425,28 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
         if (crime.suspect.isNotEmpty()) {
             suspectButton.text = crime.suspect
         }
+
+        // Обновляем (устанавливаем) фото преступления
+        updatePhotoView()
+    }
+
+    // Функция для обновления фотографии преступления
+    private fun updatePhotoView() {
+
+        // Если файл с фото существует (существует указатель на него)
+        if (photoFile.exists()) {
+
+            // Получаем по заданному пути масштабированное изображение под данную активити
+            val bitmap = getScaledBitmap(photoFile.path, requireActivity())
+
+            // Размещаем полученное фото в соответсвующую область ImageView
+            photoView.setImageBitmap(bitmap)
+
+        } else {
+
+            // Иначе устанавливаем область ImageView пустой
+            photoView.setImageBitmap(null)
+        }
     }
 
     // Переопределяем функцию, вызываемую при получении ответа от другой вызванной активити
@@ -426,10 +456,10 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
         // Перебираем различные варианты ответов и реагируем на них
         when {
 
-            // Если код результата сигнализирует об ошибке, то прекращаем выполенение функции
+            // Если код ответа сигнализирует об ошибке, то прекращаем выполенение функции
             resultCode != Activity.RESULT_OK -> return
 
-            // Если код запроса соответствует коду запроса контакта и возвращённые данные не являются пустыми
+            // Если код ответа соответствует коду запроса контакта и возвращённые данные не являются пустыми
             requestCode == REQUEST_CONTACT && data != null -> {
 
                 // Считываем полученные данный в формате URI
@@ -470,6 +500,16 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
                     // Устанавливаем имя подозреваемого в качестве текста для соответсвующей кнопки
                     suspectButton.text = suspect
                 }
+            }
+
+            // Если код ответа соответсвует коду подготовки фото преступления
+            requestCode == REQUEST_PHOTO -> {
+
+                // Отзываем разрешение у других приложений на доступ к файлу текущего фото преступления
+                requireActivity().revokeUriPermission(photoUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+                // Обновляем фото преступления
+                updatePhotoView()
             }
         }
     }
