@@ -38,6 +38,9 @@ private const val ARG_CRIME_ID = "crime_id"
 // Создаём метку для идентификации диалогового фрагмента с календарём
 private const val DIALOG_DATE = "DialogDate"
 
+// Создаём метку для идентификации диалогового фрагмента выбора времени
+private const val DIALOG_TIME = "DialogTime"
+
 // Создаём код запроса для обращения к DatePickerFragment
 private const val REQUEST_DATE = 0
 
@@ -47,12 +50,16 @@ private const val REQUEST_CONTACT = 1
 // Создаём код запроса фото преступления
 private const val REQUEST_PHOTO = 2
 
+// Создаём код запроса для обращения к TimePickerFragment
+private const val REQUEST_TIME = 3
+
 // Создаём шаблон формата, в котором следует отображать дату
 private const val DATE_FORMAT = "EEE, MMM, dd"
 
 // Создаём класс фрагмента
 // (Наследуем его от DatePickerFragment.Callbacks, чтобы можно было получить выбранную на календаре дату)
-class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
+// (Наследуем его от TimePickerFragment.Callbacks, чтобы можно было получить выбранное время)
+class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragment.Callbacks {
 
     // Создаём переменную для хранения экземпляра класса Crime
     private lateinit var crime: Crime
@@ -68,6 +75,9 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
 
     // Создаём переменную для хранения кнопки с датой
     private lateinit var dateButton: Button
+
+    // Создаём переменную для хранения кнопки с временем
+    private lateinit var timeButton: Button
 
     // Создаём переменную для хранения окошка с галочкой
     private lateinit var solvedCheckBox: CheckBox
@@ -128,6 +138,9 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
 
         // Инициализируем кнопку с датой
         dateButton = view.findViewById(R.id.crime_date) as Button
+
+        // Инициализируем кнопку с временем
+        timeButton = view.findViewById(R.id.crime_time) as Button
 
         // Инициализируем окошко с галочкой "Преступление решено"
         solvedCheckBox = view.findViewById(R.id.crime_solved) as CheckBox
@@ -268,6 +281,26 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
             }
         }
 
+        // Добавляем слушателя на кнопку выбора времени
+        timeButton.setOnClickListener {
+
+            // Создаём диалоговое окно выбора времени, добавляя к нему дополнительные свойства
+            // (В качестве аргументов передаём время выбранного преступления)
+            TimePickerFragment.newInstance(crime.date).apply {
+
+                // Назначаем CrimeFragment целевым фрагментом для TimePickerFragment
+                // (Теперь именно в CrimeFragment будут передаваться данные из TimePickerFragment)
+                setTargetFragment(this@CrimeFragment, REQUEST_TIME)
+
+                // Выводим созданное диалоговое окно поверх фрагмента
+                // (this@CrimeFragment используется для вызова функции requireFragmentManager()
+                // именно из CrimeFragment, this нужно для работы в области видимости блока apply)
+                // (DIALOG_DATE отвечает за идентификацию выведенного диалогового окна)
+                // Общий вид данной функции - show(FragmentManager, String)
+                show(this@CrimeFragment.requireFragmentManager(), DIALOG_TIME)
+            }
+        }
+
         // Добавляем слушаетля к кнопке отправки отчёта о преступлении
         reportButton.setOnClickListener {
 
@@ -400,6 +433,17 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
         updateUI()
     }
 
+    // Переопределяем функцию для получения выбранного времени
+    override fun onTimeSelected(date: Date) {
+
+        // Загружаем полученные час и минуту в текущий экземпляр преступления
+        crime.date.hours = date.hours
+        crime.date.minutes = date.minutes
+
+        // Обновляем интерфейс в соотвествии с новыми данными
+        updateUI()
+    }
+
     // Обновляем интерфейс страницы конкретного преступления в соответсвии с данными текущего преступления
     private fun updateUI() {
 
@@ -408,6 +452,10 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks {
 
         // Дополнительно форматируем дату в удобночитаемый вид
         dateButton.text = SimpleDateFormat("EEEE, MMM d, yyyy", Locale.getDefault())
+            .format(this.crime.date)
+
+        // Дополнительно форматируем время в удобночитаемый вид
+        timeButton.text = SimpleDateFormat("kk:mm", Locale.getDefault())
             .format(this.crime.date)
 
         // Для окошек с галочкой отключаем анимацию при добавлении загруженных данных, чтобы избежать

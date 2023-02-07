@@ -37,8 +37,8 @@ class DatePickerFragment: DialogFragment() {
 
             // (В targetFragment хранится экземпляр фрагмента, запустившего DatePickerFragment)
             // (Так как в нём значение null, его нужно обернуть в безопасный вызов let)
-            //  (Затем экземпляр фрагмента передается в интерфейс Callbacks и вызывается функция
-            //  onDateSelected(), передающая новую дату)
+            // (Затем экземпляр фрагмента передается в интерфейс Callbacks и вызывается функция
+            // onDateSelected(), передающая новую дату)
             targetFragment.let {
                 (it as Callbacks).onDateSelected(resultDate)
             }
