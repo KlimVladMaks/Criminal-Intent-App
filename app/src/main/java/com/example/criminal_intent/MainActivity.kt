@@ -12,7 +12,8 @@ private const val TAG = "MainActivityTAG"
 
 // Создаём главный Activity-класс, с которого начинается работа приложения
 // Добавляем в MainActivity интерфейс CrimeListFragment.Callbacks для реализации функции обратного вызова
-class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks {
+// Добавляем в MainActivity интерфейс CrimeFragment.Callbacks для реализации функции обратного вызова
+class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks, CrimeFragment.Callbacks {
 
     // Переопределяем функцию для инициализации приложения
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,6 +54,14 @@ class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks {
             .replace(R.id.fragment_container, fragment)
             .addToBackStack(null)
             .commit()
+    }
+
+    // Переопределяем функцию, вызываемую при удалении преступления
+    override fun onCrimeDelete() {
+
+        // Удаляем фрагмент, который находится сверху стэка
+        // (В данном случае закрываем окно с карточкой преступления, так как данное преступление уже удалено)
+        supportFragmentManager.popBackStack()
     }
 }
 

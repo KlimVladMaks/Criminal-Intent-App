@@ -38,6 +38,11 @@ class CrimeDetailViewModel(): ViewModel() {
         crimeRepository.updateCrime(crime)
     }
 
+    // Функция для удаления преступления из базы данных
+    fun deleteCrime(crime: Crime) {
+        crimeRepository.deleteCrime(crime)
+    }
+
     // Функция для получения ссылки на фото переданного преступления в файловой системе
     fun getPhotoFile(crime: Crime): File {
         return crimeRepository.getPhotoFile(crime)

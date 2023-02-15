@@ -64,6 +64,16 @@ class CrimeRepository private constructor(context: Context) {
         }
     }
 
+    // Функция для удаления преступления из базы данных
+    fun deleteCrime(crime: Crime) {
+
+        // Запускаем блок кода в том потоке, на который ссылается исполнитель
+        executor.execute {
+            // Удаляем переданное преступление из базы данных
+            crimeDao.deleteCrime(crime)
+        }
+    }
+
     // Функция, возвращающая объект File, указывающий на файл с фотографией переданного преступления
     fun getPhotoFile(crime: Crime): File = File(filesDir, crime.photoFileName)
 

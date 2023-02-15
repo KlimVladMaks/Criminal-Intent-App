@@ -1,10 +1,7 @@
 package com.example.criminal_intent.database
 
 import androidx.lifecycle.LiveData
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.Update
+import androidx.room.*
 import com.example.criminal_intent.Crime
 import java.util.UUID
 
@@ -30,6 +27,10 @@ interface CrimeDao {
     // Функция для добавления нового преступления в базу данных
     @Insert
     fun addCrime(crime: Crime)
+
+    // Функция для удаления преступления из базы данных
+    @Delete
+    fun deleteCrime(crime: Crime)
 }
 
 

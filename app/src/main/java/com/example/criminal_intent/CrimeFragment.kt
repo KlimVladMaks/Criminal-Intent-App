@@ -1,6 +1,7 @@
 package com.example.criminal_intent
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -12,9 +13,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.text.format.DateFormat
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -61,6 +60,16 @@ private const val DATE_FORMAT = "EEE, MMM, dd"
 // (Наследуем его от TimePickerFragment.Callbacks, чтобы можно было получить выбранное время)
 class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragment.Callbacks {
 
+    // Создаём интерфейс для обратного вызова (передачи сообщения в) хост-активити
+    interface Callbacks {
+
+        // Функция, возвращающая хост-активити информацию о том, что текущее преступление было удалено
+        fun onCrimeDelete()
+    }
+
+    // Инициализируем переменную, хранящую экземпляр интерфейса Callbacks обратного вызова хост-активити
+    private var callbacks: Callbacks ?= null
+
     // Создаём переменную для хранения экземпляра класса Crime
     private lateinit var crime: Crime
 
@@ -102,6 +111,15 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragmen
         ViewModelProvider(this)[CrimeDetailViewModel::class.java]
     }
 
+    // Переопреедляем функцию onAttach(), вызываемую, когда фрагмент прикрепляется к activity
+    // В качестве context передаётся экземпляр activity
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+
+        // Помещаем в callbacks экземпляр activity, к которой был прикреплён фрагмент
+        callbacks = context as CrimeFragment.Callbacks?
+    }
+
     // Переопределяем функцию создания фрагмента
     // (Данная функция должна быть открытой, чтобы вызываться произвольной Activity)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,6 +133,10 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragmen
 
         // Загружаем в crimeDetailViewModel информацию об ID выбранного преступления
         crimeDetailViewModel.loadCrime(crimeId)
+
+        // Указываем, что фрагмент должен получить обратные вызовы верхнего меню
+        // (По-сути, подключаем верхнее меню, указывая, что фрагмент будет работать с ним)
+        setHasOptionsMenu(true)
     }
 
     // Переопределяем функцию для заполнения представления фрагмента
@@ -421,6 +443,40 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragmen
 
         // Отзываем разрешение у других приложений на доступ к файлу текущего фото преступления
         requireActivity().revokeUriPermission(photoUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+        // Устанавливаем callbacks равным null, так как он больше не должен обращаться к хост-активити
+        callbacks = null
+    }
+
+    // Переопределяем функцию, вызываемую при создании верхнего меню фрагмента
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        // Заполняем верхнее меню XML-макетом fragment_crime
+        inflater.inflate(R.menu.fragment_crime, menu)
+    }
+
+    // Переопределяем функцию, вызываемую при выборе (нажатии) команды в верхнем меню
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+
+        // Исследуем ID выбранной команды
+        return when (item.itemId) {
+
+            // Если ID соответсвует команде удаления текущего преступления
+            R.id.delete_crime -> {
+
+                // Удаляем текущее преступление через ViewModel
+                crimeDetailViewModel.deleteCrime(crime)
+
+                // Сообщаем хост-активити, что текущее преступление было удалено
+                callbacks?.onCrimeDelete()
+
+                // Возвращаем true, чтобы показать, что дальнейшая обработка не требуется
+                true
+            }
+
+            else -> return super.onOptionsItemSelected(item)
+        }
     }
 
     // Переопределяем функцию для получения выбранной на календаре даты
