@@ -35,6 +35,12 @@ class CrimeListFragment: Fragment() {
     // Создаём переменную для хранения списка преступлений
     private lateinit var crimeRecyclerView: RecyclerView
 
+    // Создаём переменную для хранения надписи о том, что список пуст
+    private lateinit var emptyListTextView: TextView
+
+    // Создаём переменную для хранения кнопки создания нового преступления
+    private lateinit var newCrimeButton: Button
+
     // Создаём переменную для хранения адаптера списка и по умолчанию добавляем в него пустой список
     private var adapter: CrimeAdapter? = CrimeAdapter(emptyList())
 
@@ -77,6 +83,12 @@ class CrimeListFragment: Fragment() {
         // Инициализируем список преступлений
         crimeRecyclerView = view.findViewById(R.id.crime_recycler_view) as RecyclerView
 
+        // Инициализируем текстовое поле с надписью о том, что список преступлений пуст
+        emptyListTextView = view.findViewById(R.id.empty_list_text) as TextView
+
+        // Инициализируем кнопку создания нового преступления
+        newCrimeButton = view.findViewById(R.id.new_crime_button)
+
         // Подключаем к списку RecyclerView объект LinearLayoutManager, который отвечает за
         // размещение объектов списка по вертикали и их прокрутку
         // (Для подключения используем Context, с которым в данный момент связан этот фрагмент)
@@ -110,6 +122,25 @@ class CrimeListFragment: Fragment() {
                 }
             }
         )
+    }
+
+    // Переопределяем функцию, вызываемую при запуске (старте) фрагмента
+    override fun onStart() {
+        super.onStart()
+
+        // Добавляем слушателя к кнопке создания нового преступления
+        newCrimeButton.setOnClickListener {
+
+            // Создаём новый экземпляр преступления
+            val crime = Crime()
+
+            // Добавляем созданный экземпляр преступления в базу данных
+            crimeListViewModel.addCrime(crime)
+
+            // Отдаём хост-активити через интерфейс обратного вызова команду вывести карточку
+            // вышесозданного нового преступления на экран
+            callbacks?.onCrimeSelected(crime.id)
+        }
     }
 
     // Переопределяем функцию, вызываемую при откреплении фрагмента от activity
@@ -161,6 +192,26 @@ class CrimeListFragment: Fragment() {
 
         // Создаём адаптер, передавая ему список преступлений
         adapter = CrimeAdapter(crimes)
+
+        // Если количество преступлений в списке не равно нулю
+        if (adapter!!.itemCount != 0) {
+
+            // Скрываем текстовое поле с нодписью о пустом списке
+            emptyListTextView.visibility = View.GONE
+
+            // Скрываем кнопку создания нового преступления
+            newCrimeButton.visibility = View.GONE
+        }
+
+        // Иначе
+        else {
+
+            // Показываем текстовое поле с нодписью о пустом списке
+            emptyListTextView.visibility = View.VISIBLE
+
+            // Показываем кнопку создания нового преступления
+            newCrimeButton.visibility = View.VISIBLE
+        }
 
         // Подулючаем созданный адаптер к RecyclerView
         crimeRecyclerView.adapter = adapter
