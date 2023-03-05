@@ -450,6 +450,18 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragmen
                 startActivityForResult(pickPhoneIntent, REQUEST_PHONE)
             }
         }
+
+        // Добавляем слушателя нажатий для области размещения изображения
+        photoView.setOnClickListener {
+
+            // Создаём экземпляр диалогового фрагмента для увеличения изображения, передавая ему имя
+            // текущего изображения
+            val zoomDialog = ZoomDialogFragment.newInstance(crime.photoFileName)
+
+            // Показываем диалоговое окно с увеличенным изображением
+            // (Соблюдая null-безопасность)
+            fragmentManager?.let { it1 -> zoomDialog.show(it1, null) }
+        }
     }
 
     // Переопределяем функцию, вызываемую перед остановкой фрагмента
