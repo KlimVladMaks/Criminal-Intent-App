@@ -12,7 +12,6 @@ import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.format.DateFormat
-import android.util.Log
 import android.view.*
 import android.widget.Button
 import android.widget.CheckBox
@@ -51,6 +50,9 @@ private const val REQUEST_PHOTO = 2
 
 // Создаём код запроса для обращения к TimePickerFragment
 private const val REQUEST_TIME = 3
+
+// Создаём код запроса для обращения к списку контактов
+private const val REQUEST_PHONE = 4
 
 // Создаём шаблон формата, в котором следует отображать дату
 private const val DATE_FORMAT = "EEE, MMM, dd"
@@ -105,6 +107,9 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragmen
 
     // Создаём переменную для хранения кнопки подготовки фото
     private lateinit var photoButton: ImageButton
+
+    // Создаём переменную для хранения кнопки звонка подозреваемому
+    private lateinit var callSuspectButton: Button
 
     // Лениво инициализируем экземпляр CrimeDetailViewModel, привязывая его к данному фрагменту
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
@@ -181,6 +186,9 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragmen
 
         // Инициализируем кнопку для установки фото преступления
         photoButton = view.findViewById(R.id.crime_camera) as ImageButton
+
+        // Инициализируем кнопку звонка подозреваемому
+        callSuspectButton = view.findViewById(R.id.call_suspect_button)
 
         // Возвращаем созданный объект View
         return view
@@ -427,6 +435,21 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragmen
                 startActivityForResult(captureImage, REQUEST_PHOTO)
             }
         }
+
+        // Добавляем к кнопке звонка подозреваемому несколько компонентов
+        callSuspectButton.apply {
+
+            // Создаём интент для обращения к списку контактов и получения номера подозреваемого
+            val pickPhoneIntent = Intent(Intent.ACTION_PICK,
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+
+            // Добавляем слушателя кнопке
+            setOnClickListener {
+
+                // Запускаем интент с ожиданием результата (ответа)
+                startActivityForResult(pickPhoneIntent, REQUEST_PHONE)
+            }
+        }
     }
 
     // Переопределяем функцию, вызываемую перед остановкой фрагмента
@@ -614,6 +637,50 @@ class CrimeFragment: Fragment(), DatePickerFragment.Callbacks, TimePickerFragmen
 
                 // Обновляем фото преступления
                 updatePhotoView()
+            }
+
+            // Если код ответа соответсвует запросу номера подозреваемого
+            requestCode == REQUEST_PHONE && data != null -> {
+
+                // Извлекаем URI контакта из полученных данных
+                val contactURI : Uri? = data.data
+
+                // Получаем ID для обращение к номеру телефона
+                val queryFields = ContactsContract.CommonDataKinds.Phone._ID
+
+                // Создаём курсор для работы с переданными данными
+                val cursor = requireActivity()
+                    .contentResolver
+                    .query(contactURI!!, null, queryFields, null, null)
+
+                // Обрабатываем переданные данные при помощи курсора
+                cursor.use {
+
+                    // Если количество переданных полей равно нулю, то прекращаем обработку
+                    if (it?.count == 0) {
+                        return
+                    }
+
+                    // Перемещаем курсор на первую позицию
+                    it?.moveToFirst()
+
+                    // Извлекаем номер телефона
+                    val number = it
+                        ?.getString(it
+                            .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+
+                    // Создаём интент для нобора номера телефона
+                    val dialNumber = Intent(Intent.ACTION_DIAL)
+
+                    // Добовляем в созданый интент полученный номер подозреваемого
+                    dialNumber.data = Uri.parse("tel: $number")
+
+                    // Запускаем интент
+                    startActivity(dialNumber)
+                }
+
+                // Закрываем курсор
+                cursor?.close()
             }
         }
     }

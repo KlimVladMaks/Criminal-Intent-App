@@ -22,6 +22,7 @@
     <string name="send_report">Send crime report via</string>
     <string name="no_crime">List is empty</string>
     <string name="create_new_crime">Create new crime</string>
+    <string name="call_suspect">Call suspect</string>
 </resources>
 
 
